@@ -20,7 +20,7 @@ const LoginScreen = () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // Navigate to Photos screen on successful login
-      navigation.navigate('Photos');
+      navigation.navigate('HomeTabs');
     } catch (error) {
       Alert.alert('Login Failed', error.message);
     }

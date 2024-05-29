@@ -16,8 +16,7 @@ const RegisterScreen = () => {
   const handleRegistration = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      // Navigate to Photos screen on successful registration
-      navigation.navigate('Photos');
+      navigation.navigate('HomeTabs');
     } catch (error) {
       Alert.alert('Registration Failed', error.message);
     }
