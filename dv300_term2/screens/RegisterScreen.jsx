@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 
+ 
 const RegisterScreen = () => {
   const navigation = useNavigation();
   const [selectedAge, setSelectedAge] = useState();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleRegistration = async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Navigate to Photos screen on successful registration
+      navigation.navigate('Photos');
+    } catch (error) {
+      Alert.alert('Registration Failed', error.message);
+    }
+  };
+
 
   return (
     <View style={styles.container_big}>
@@ -22,7 +39,7 @@ const RegisterScreen = () => {
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={selectedAge}
-            style={styles.picker} // Apply picker styles
+            style={styles.picker}
             onValueChange={(itemValue) => setSelectedAge(itemValue)}
           >
             <Picker.Item label="Select Age" value={null} />
@@ -33,12 +50,12 @@ const RegisterScreen = () => {
         </View>
         
         <Text style={styles.Infotext}>Log In Information:</Text>
-        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#A9A9A9" />
-        <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#A9A9A9" secureTextEntry />
+        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#A9A9A9" onChangeText={setEmail}/>
+        <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#A9A9A9" secureTextEntry onChangeText={setPassword}/>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Photos')}
+          onPress={handleRegistration}
         >
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>

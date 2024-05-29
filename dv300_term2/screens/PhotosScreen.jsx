@@ -1,26 +1,36 @@
-import { StyleSheet, View, Text } from 'react-native'
+import { StyleSheet, Text, View, Button, SafeAreaView } from 'react-native'
 import React from 'react'
+import { auth } from '../firebase'; // Ensure this path is correct
 
-function PhotosScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Photos</Text>
-    </View>
-  )
+const ProfileScreen = ({ navigation }) => {
+
+    const handleLogout = () => {
+        // Sign out from Firebase
+        auth.signOut().then(() => {
+            // Navigate back to login screen
+            navigation.replace('Login');
+        }).catch((error) => {
+            // Handle errors here
+            console.error("Sign out error:", error);
+        });
+    }
+
+    return (
+        <SafeAreaView>
+            <View style={{ padding: 20 }}>
+                <Text>Photos</Text>
+
+                {/* Display user info */}
+                <Text>Email: {auth.currentUser?.email}</Text>
+                <Text>Username: {auth.currentUser?.displayName}</Text>
+
+                <Button
+                    title="Sign Out"
+                    color="green"
+                    onPress={handleLogout} />
+            </View>
+        </SafeAreaView>
+    )
 }
 
-export default PhotosScreen
-
-const styles = StyleSheet.create({
-  container: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: "#151718"
-  },
-  title: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: "#ECEDEE"
-  }
-})
+export default ProfileScreen

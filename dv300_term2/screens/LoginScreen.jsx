@@ -1,9 +1,32 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { handleLogin } from '../services/authService';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useEffect, useState } from 'react';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
+
+  const register = () => {
+    navigation.replace('register');
+  }
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Navigate to Photos screen on successful login
+      navigation.navigate('Photos');
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    }
+  };
+
+  const login = () => { handleLogin(email, password) }
   return (
     <View style={styles.container_big}>
       <Image style={styles.image} source={require('../assets/Login.png')} />
@@ -12,9 +35,23 @@ const LoginScreen = () => {
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Log in to continue</Text>
 
-        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#A9A9A9" />
-        <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#A9A9A9" secureTextEntry />
 
+        <TextInput
+          style={styles.input}
+          placeholderTextColor="#A9A9A9"
+          placeholder="Email"
+          onChangeText={newText => setEmail(newText)}
+          defaultValue={email}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholderTextColor="#A9A9A9"
+          secureTextEntry
+          placeholder="Password"
+          onChangeText={newText => setPassword(newText)}
+          defaultValue={password}
+        />
         <TouchableOpacity style={styles.forgotPasswordContainer}>
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
@@ -22,7 +59,7 @@ const LoginScreen = () => {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Photos')}
+          onPress={handleLogin}
         >
           <Text style={styles.buttonText}>Login</Text>
         </TouchableOpacity>
@@ -86,8 +123,8 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
   },
   forgotPasswordContainer: {
-    width: '100%', 
-    alignItems: 'flex-end', 
+    width: '100%',
+    alignItems: 'flex-end',
     marginBottom: 20,
   },
   forgotPasswordText: {
