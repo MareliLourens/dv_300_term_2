@@ -6,7 +6,6 @@ import { getCategories } from '../services/DbService';
 
 const CompetitionsScreen = ({ navigation }) => {
 
-    const goToAdd = () => { navigation.navigate("Add") }
 
     const [CategoryItems, setCategoryItems] = useState([])
 
@@ -25,7 +24,7 @@ const CompetitionsScreen = ({ navigation }) => {
             <View style={styles.container}>
 
         { CategoryItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.card}>
+            <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate("Details", { item })}>
                     <Text>{item.name}</Text>
                     <AntDesign name="star" size={24} color="orange" />
                 </TouchableOpacity>

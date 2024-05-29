@@ -9,6 +9,7 @@ import HomeScreen from './screens/HomeScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import CompetitionsScreen from './screens/CompetitionsScreen';
 import EntriesScreen from './screens/EntriesScreen';
+import DetailsScreen from './screens/DetailsScreen';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const Stack = createNativeStackNavigator();
@@ -66,6 +67,11 @@ export default function App() {
         <Stack.Screen
           name="HomeTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Details"
+          component={DetailsScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>
