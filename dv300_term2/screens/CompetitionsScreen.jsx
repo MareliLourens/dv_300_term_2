@@ -11,7 +11,7 @@ const CompetitionsScreen = ({ navigation }) => {
 
     useEffect(() => {
         handleGettingOfData()
-        
+
     }, [])
 
     const handleGettingOfData = async () => {
@@ -23,16 +23,19 @@ const CompetitionsScreen = ({ navigation }) => {
         <SafeAreaView>
             <View style={styles.container}>
 
-        { CategoryItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate("Details", { item })}>
-                    <Text>{item.name}</Text>
-                    <AntDesign name="star" size={24} color="orange" />
-                </TouchableOpacity>
-        )) }
-                
+                {CategoryItems.map((item, index) => (
+                    <TouchableOpacity key={index} style={styles.card} onPress={() => navigation.navigate("Details", { item })}>
+                        <Text>{item.name}</Text>
+                        <AntDesign name="star" size={24} color="orange" />
+                    </TouchableOpacity>
+                ))}
+
             </View>
 
+            
         </SafeAreaView>
+
+
     )
 }
 
@@ -67,5 +70,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: 'green',
         fontWeight: 'bold'
-    }
+    },
+    
 })
