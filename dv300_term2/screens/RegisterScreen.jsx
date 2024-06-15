@@ -4,24 +4,32 @@ import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
- 
 const RegisterScreen = () => {
   const navigation = useNavigation();
   const [selectedAge, setSelectedAge] = useState();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleRegistration = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userId = userCredential.user.uid;
+
+      // Save user data to Firestore
+      const userRef = doc(db, 'users', userId);
+      await setDoc(userRef, {
+        email: email,
+        voted: false
+      });
+
       navigation.navigate('HomeTabs');
     } catch (error) {
       Alert.alert('Registration Failed', error.message);
     }
   };
-
 
   return (
     <View style={styles.container_big}>
@@ -30,11 +38,9 @@ const RegisterScreen = () => {
       <View style={styles.container}>
         <Text style={styles.title}>Welcome</Text>
         <Text style={styles.subtitle}>Sign up to continue</Text>
-
         <Text style={styles.Infotext}>Personal Information:</Text>
         <TextInput style={styles.input} placeholder="Name" placeholderTextColor="#A9A9A9" />
         <TextInput style={styles.input} placeholder="Surname" placeholderTextColor="#A9A9A9" />
-        
         <View style={styles.pickerContainer}>
           <Picker
             selectedValue={selectedAge}
@@ -47,22 +53,13 @@ const RegisterScreen = () => {
             ))}
           </Picker>
         </View>
-        
         <Text style={styles.Infotext}>Log In Information:</Text>
-        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#A9A9A9" onChangeText={setEmail}/>
-        <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#A9A9A9" secureTextEntry onChangeText={setPassword}/>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleRegistration}
-        >
+        <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#A9A9A9" onChangeText={setEmail} />
+        <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#A9A9A9" secureTextEntry onChangeText={setPassword} />
+        <TouchableOpacity style={styles.button} onPress={handleRegistration}>
           <Text style={styles.buttonText}>Sign Up</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.signupbutton}
-          onPress={() => navigation.navigate('Login')}
-        >
+        <TouchableOpacity style={styles.signupbutton} onPress={() => navigation.navigate('Login')}>
           <Text style={styles.signupbuttonText}>Already a member?</Text>
         </TouchableOpacity>
       </View>

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Button, StyleSheet, Text, View, SafeAreaView, Image, TouchableOpacity, ScrollView, ImageBackground, ActivityIndicator } from 'react-native';
-import { getEntries, updateEntryVote } from '../services/DbService';
+import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, ImageBackground, ActivityIndicator, Alert } from 'react-native';
+import { getEntries, updateEntryVote, updateEntryVoter } from '../services/DbService';
 import { getDownloadURL, ref } from 'firebase/storage';
-import { storage } from '../firebase';
+import { storage, auth } from '../firebase';
 
 const DetailsScreen = ({ route, navigation }) => {
     const { item } = route.params;
@@ -14,6 +14,7 @@ const DetailsScreen = ({ route, navigation }) => {
     const [entries, setEntries] = useState([]);
     const [leaderName, setLeaderName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [votedEntries, setVotedEntries] = useState([]);
 
     useEffect(() => {
         findLeader(entries);
@@ -49,31 +50,45 @@ const DetailsScreen = ({ route, navigation }) => {
 
     const handleVote = async (categoryId, entryId, newVoteCount) => {
         try {
-            // Ensure entryId is not undefined
-            if (!entryId) {
-                console.error("Error: entryId is undefined");
+            // Ensure user is logged in
+            const user = auth.currentUser;
+            if (!user) {
+                console.error("User is not logged in");
                 return;
             }
-    
-            // Update the vote count in the database
+
+            // Check if user has already voted for this entry
+            if (votedEntries.includes(entryId)) {
+                Alert.alert("Already Voted", "You have already voted for this entry.");
+                return;
+            }
+
+            // Update vote count in the database
             await updateEntryVote(categoryId, entryId, newVoteCount);
-    
+
+            // Update voter details in 'users' collection
+            await updateEntryVoter(categoryId, entryId, user.uid);
+
+            // Update voted entries state
+            setVotedEntries([...votedEntries, entryId]);
+
             // Retrieve updated entries data after the vote
             const updatedEntriesData = await getEntries(categoryId);
-    
+
             // Update the entries array with the new vote counts
             const updatedEntries = updatedEntriesData.map(updatedEntry => {
                 const existingEntry = entries.find(entry => entry.id === updatedEntry.id);
                 return existingEntry ? { ...existingEntry, votes: updatedEntry.votes } : updatedEntry;
             });
-    
+
             // Sort the updated entries array based on votes in descending order
             updatedEntries.sort((a, b) => b.votes - a.votes);
-    
+
             // Update state with the sorted entries
             setEntries(updatedEntries);
         } catch (error) {
-            console.error("Error updating vote count in the database: ", error);
+            console.error("Error updating vote count or voter information in the database: ", error);
+            Alert.alert("Error", "Failed to update vote count or voter information. Please try again later.");
         }
     };
 
@@ -91,7 +106,6 @@ const DetailsScreen = ({ route, navigation }) => {
             handleGettingEntriesWithImages(item.id);
         }
     };
-
     return (
         <View style={styles.container}>
             <ImageBackground style={styles.image} source={{ uri: item.imageUrl }} />
@@ -125,12 +139,17 @@ const DetailsScreen = ({ route, navigation }) => {
                             entries.map((entry) => (
                                 <View style={styles.entryBubble} key={entry.id}>
                                     <Text style={styles.entryText}>{entry.name}</Text>
-                                    <Text style={styles.entryText}>{entry.votes}</Text>
+                                    <View style={styles.right_votes}>
+                                        <Text style={styles.entryVotes}>{entry.votes} Votes</Text>
+                                    </View>
+
                                     <Image
                                         source={{ uri: entry.imageUrl }}
                                         style={styles.entryImage}
                                     />
-                                    <Button title="Vote" onPress={() => handleVote(item.id, entry.id, entry.votes + 1)} />
+                                    <TouchableOpacity style={styles.vote_button} onPress={() => handleVote(item.id, entry.id, (+entry.votes) + 1)}>
+                                        <Text style={styles.votesText}>Vote</Text>
+                                    </TouchableOpacity>
                                 </View>
                             ))
                         ) : (
@@ -240,10 +259,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     entryBubble: {
-        backgroundColor: '#eee',
-        padding: 10,
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 10,
+        paddingVertical: 20,
         marginVertical: 5,
-        borderRadius: 10,
+        borderRadius: 35,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     entryText: {
         fontSize: 16,
@@ -286,5 +311,38 @@ const styles = StyleSheet.create({
         color: 'white',
         marginTop: -5,
         marginLeft: 15,
+    },
+    right_votes: {
+        position: 'absolute',
+        top: 15,
+        right: 10,
+        display: "flex",
+        width: 90,
+        height: 30,
+        borderRadius: 25,
+        backgroundColor: "#FFBF5E",
+        alignItems: 'center',
+        paddingTop: 4,
+    },
+    entryVotes: {
+        fontSize: 15,
+        flex: 1,
+        color: 'white',
+    },
+    vote_button: {
+        width: '100%',
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 25,
+        borderWidth: 3,
+        borderColor: '#FFBF5E',
+        marginTop: 15,
+        color: 'black',
+    },
+    votesText: {
+        color: '#000000',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });
