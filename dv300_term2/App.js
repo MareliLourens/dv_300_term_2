@@ -45,7 +45,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setLoggedIn(!!user); // Convert user to boolean
+      setLoggedIn(!!user);
     });
     return unsubscribe;
   }, []);

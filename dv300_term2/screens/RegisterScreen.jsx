@@ -18,7 +18,6 @@ const RegisterScreen = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const userId = userCredential.user.uid;
 
-      // Save user data to Firestore
       const userRef = doc(db, 'users', userId);
       await setDoc(userRef, {
         email: email,

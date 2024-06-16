@@ -1,16 +1,13 @@
 import { db, firestore } from "../firebase";
 import { getDocs, collection, doc, addDoc, query, orderBy, updateDoc, setDoc, increment } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 
-// Function to create a new entry in the specified category
 export const createNewEntry = async (categoryId, entryData) => {
     try {
         const entriesRef = collection(db, 'Categories', categoryId, 'entries');
         const docRef = await addDoc(entriesRef, entryData);
         console.log('Document written with ID: ', docRef.id);
 
-        // Update the entries count in the category document
-        await updateCategoryEntriesCount(categoryId); // Increment entries count
+        await updateCategoryEntriesCount(categoryId); 
 
         return true;
     } catch (error) {
@@ -19,7 +16,6 @@ export const createNewEntry = async (categoryId, entryData) => {
     }
 };
 
-// Function to update the vote count of an entry
 export const updateEntryVote = async (categoryId, entryId, newVoteCount) => {
     try {
         console.log("Updating vote count for categoryId:", categoryId, "entryId:", entryId);
@@ -30,11 +26,10 @@ export const updateEntryVote = async (categoryId, entryId, newVoteCount) => {
         console.log("Vote count updated successfully.");
     } catch (error) {
         console.error("Error updating vote count in the database:", error);
-        throw error; // Throw the error to handle it in the calling function
+        throw error; 
     }
 };
 
-// Function to update the voter information for an entry
 export const updateEntryVoter = async (categoryId, entryId, userId) => {
     try {
         const userRef = doc(db, 'users', userId);
@@ -44,11 +39,10 @@ export const updateEntryVoter = async (categoryId, entryId, userId) => {
         console.log("Voter information updated successfully.");
     } catch (error) {
         console.error("Error updating voter information in the database:", error);
-        throw error; // Throw the error to handle it in the calling function
+        throw error; 
     }
 };
 
-// Function to get all categories
 export const getCategories = async () => {
     try {
         const allCategories = [];
@@ -64,7 +58,6 @@ export const getCategories = async () => {
     }
 };
 
-// Function to get all entries in a category sorted by votes in descending order
 export const getEntries = async (categoryId) => {
     try {
         const collectionRef = collection(firestore, "Categories", categoryId, "entries");
@@ -84,7 +77,7 @@ const updateCategoryEntriesCount = async (categoryId) => {
 
     try {
         await updateDoc(categoryRef, {
-            entries: increment(1) // Increment entries count by 1
+            entries: increment(1)
         });
 
         console.log('Entries count updated successfully for category:', categoryId);

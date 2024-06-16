@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { handleLogin } from '../services/authService';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -19,7 +18,6 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Navigate to Photos screen on successful login
       navigation.navigate('HomeTabs');
     } catch (error) {
       Alert.alert('Login Failed', error.message);

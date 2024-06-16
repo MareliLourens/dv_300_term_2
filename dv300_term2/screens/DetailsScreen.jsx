@@ -26,7 +26,7 @@ const DetailsScreen = ({ route, navigation }) => {
             const entriesData = await getEntries(categoryId);
 
             const entriesWithImages = await Promise.all(entriesData.map(async (entry) => {
-                const imageUrl = await fetchImage(entry.imagePath); // Assuming fetchImage is defined and working correctly
+                const imageUrl = await fetchImage(entry.imagePath);
                 console.log(`Entry ${entry.id} image URL: ${imageUrl}`);
                 return { ...entry, imageUrl };
             }));
@@ -49,7 +49,7 @@ const DetailsScreen = ({ route, navigation }) => {
         try {
             if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
                 console.log(`Using direct URL: ${imagePath}`);
-                return imagePath; // Direct URLs are already usable
+                return imagePath;
             } else if (imagePath.startsWith("gs://")) {
                 console.log(`Using storage reference: ${imagePath}`);
                 const storageRef = ref(storage, imagePath);
@@ -160,14 +160,13 @@ const DetailsScreen = ({ route, navigation }) => {
                                     <TouchableOpacity style={styles.vote_button} onPress={() => handleVote(item.id, entry.id, (+entry.votes) + 1)}>
                                         <Text style={styles.votesText}>Vote</Text>
                                     </TouchableOpacity>
-                                    {/* Add a console log here to check imageUrl */}
                                     {console.log("Image URL:", entry.imageUrl)}
                                 </View>
                             ))
                         ) : (
                             <Text>No Entries Yet</Text>
                         )}
-                        
+
                     </View>
                 </View>
             </ScrollView>

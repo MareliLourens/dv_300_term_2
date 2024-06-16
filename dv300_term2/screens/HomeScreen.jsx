@@ -1,6 +1,5 @@
 import { StyleSheet, Text, View, Button, SafeAreaView, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { auth } from '../firebase';
 import { getCategories } from '../services/DbService';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { storage } from '../firebase';
@@ -17,7 +16,7 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    // Start countdown timers for each competition
+
     const interval = setInterval(updateRemainingTimes, 1000);
 
     return () => clearInterval(interval);
@@ -25,23 +24,23 @@ const HomeScreen = ({ navigation }) => {
 
   const handleGettingOfData = async () => {
     try {
-      setLoading(true); // Start loading
+      setLoading(true);
       var allData = await getCategories();
       console.log("All data: ", allData);
 
       // Fetch image URLs for each category
       const allDataWithImages = await Promise.all(allData.map(async (item) => {
-        const imageUrl = await fetchImage(item.imagePath); // Assuming each item has an 'imagePath' property
+        const imageUrl = await fetchImage(item.imagePath);
         return { ...item, imageUrl };
       }));
 
       setCategoryItems(allDataWithImages);
       setLoading(false);
-      setIsRefreshing(false); // Finish refreshing
+      setIsRefreshing(false);
     } catch (error) {
       console.error("Error fetching categories or images: ", error);
       setLoading(false);
-      setIsRefreshing(false); // Finish refreshing
+      setIsRefreshing(false);
     }
   };
 
@@ -69,21 +68,17 @@ const HomeScreen = ({ navigation }) => {
     CategoryItems.forEach(item => {
       try {
 
-        // Convert Firestore Timestamp to JavaScript Date object
+
         const timestamp = item.time_remaining;
         const endTime = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
 
-        // Adjust endTime for UTC+2 timezone
-        endTime.setHours(endTime.getHours() + 2); // Adjust for UTC+2
+        endTime.setHours(endTime.getHours() + 2);
 
-        // Calculate current time in UTC
         const now = moment();
 
-        // Calculate time difference in milliseconds
         const timeDiff = endTime.getTime() - now.valueOf();
 
         if (timeDiff > 0) {
-          // Convert time difference to days, hours, minutes, seconds
           const duration = moment.duration(timeDiff);
           const days = duration.days();
           const hours = duration.hours();
@@ -95,7 +90,7 @@ const HomeScreen = ({ navigation }) => {
           updatedRemainingTimes[item.name] = "Expired";
         }
       } catch (error) {
-        updatedRemainingTimes[item.name] = "Error"; // Handle error state gracefully
+        updatedRemainingTimes[item.name] = "Error";
       }
     });
 
@@ -110,7 +105,7 @@ const HomeScreen = ({ navigation }) => {
       </View>
       <ScrollView
         onScroll={handleScroll}
-        scrollEventThrottle={16} // Adjust as needed
+        scrollEventThrottle={16}
         contentContainerStyle={{ padding: 20, paddingTop: 80 }}
       >
         {loading ? (
@@ -154,6 +149,9 @@ const HomeScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
+export default HomeScreen;
+
 const styles = StyleSheet.create({
   stickyHeader: {
     position: 'absolute',
@@ -279,7 +277,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 5,
   },
-  countdownname:{
+  countdownname: {
     color: 'black',
     fontSize: 20,
     fontWeight: 'bold',
@@ -292,4 +290,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+

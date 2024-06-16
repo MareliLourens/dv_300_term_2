@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Image, Platform } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView, Image, Platform } from 'react-native';
 import { createNewEntry, getCategories } from '../services/DbService';
-import { Button } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../firebase'; // Import storage from firebase.js
-import { saveImageUrlToFirestore } from '../services/BucketService'; // Import saveImageUrlToFirestore function
+import { storage } from '../firebase';
+import { saveImageUrlToFirestore } from '../services/BucketService';
 
 const EntriesScreen = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -49,37 +48,37 @@ const EntriesScreen = ({ navigation }) => {
     };
 
     const handleCreation = async () => {
-    try {
-        // Upload image and get URL
-        let imageUrl = null;
-        if (image) {
-            imageUrl = await uploadImage(image);
-        }
+        try {
 
-        // Create entry data object
-        const entryData = {
-            name,
-            surname,
-            email,
-            age,
-            password,
-            category: selectedCategory,
-            isEntered: false,
-            imagePath: imageUrl || null,
-            votes: 0,
-        };
+            let imageUrl = null;
+            if (image) {
+                imageUrl = await uploadImage(image);
+            }
 
-        // Save entry data including imageUrl to Firestore
-        const success = await createNewEntry(selectedCategory, entryData);
-        if (success) {
-            navigation.goBack();
-        } else {
-            console.error('Failed to create entry');
+
+            const entryData = {
+                name,
+                surname,
+                email,
+                age,
+                password,
+                category: selectedCategory,
+                isEntered: false,
+                imagePath: imageUrl || null,
+                votes: 0,
+            };
+
+
+            const success = await createNewEntry(selectedCategory, entryData);
+            if (success) {
+                navigation.goBack();
+            } else {
+                console.error('Failed to create entry');
+            }
+        } catch (error) {
+            console.error('Error creating entry:', error);
         }
-    } catch (error) {
-        console.error('Error creating entry:', error);
-    }
-};
+    };
 
 
     const uploadImage = async (imageUri) => {
@@ -89,16 +88,16 @@ const EntriesScreen = ({ navigation }) => {
         const response = await fetch(uploadUri);
         const blob = await response.blob();
 
-        const storageRef = ref(storage, filename); // Save directly in the root of storage
+        const storageRef = ref(storage, filename);
         const uploadTask = uploadBytesResumable(storageRef, blob);
 
         try {
             const snapshot = await uploadTask;
 
-            // Get download URL for the uploaded image
+
             const downloadUrl = await getDownloadURL(snapshot.ref);
 
-            // Save the download URL to Firestore using saveImageUrlToFirestore function
+
             await saveImageUrlToFirestore(downloadUrl, 'entries', {
                 name,
                 surname,
@@ -193,7 +192,7 @@ const EntriesScreen = ({ navigation }) => {
                     <Text style={styles.imgText}>Pick an image from camera roll</Text>
                 </TouchableOpacity>
                 <View style={styles.entryBubble}>
-                {image && <Image source={{ uri: image }} style={styles.image} />}
+                    {image && <Image source={{ uri: image }} style={styles.image} />}
                 </View>
                 <TouchableOpacity style={styles.button} onPress={handleCreation}>
                     <Text style={styles.buttonText}>Enter Competition</Text>
