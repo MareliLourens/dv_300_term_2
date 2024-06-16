@@ -26,7 +26,8 @@ const DetailsScreen = ({ route, navigation }) => {
             const entriesData = await getEntries(categoryId);
 
             const entriesWithImages = await Promise.all(entriesData.map(async (entry) => {
-                const imageUrl = await fetchImage(entry.imagePath);
+                const imageUrl = await fetchImage(entry.imagePath); // Assuming fetchImage is defined and working correctly
+                console.log(`Entry ${entry.id} image URL: ${imageUrl}`);
                 return { ...entry, imageUrl };
             }));
 
@@ -38,53 +39,59 @@ const DetailsScreen = ({ route, navigation }) => {
         }
     };
 
+
     const fetchImage = async (imagePath) => {
+        if (!imagePath) {
+            console.log("No imagePath provided");
+            return null;
+        }
+
         try {
-            const storageRef = ref(storage, imagePath);
-            return await getDownloadURL(storageRef);
+            if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+                console.log(`Using direct URL: ${imagePath}`);
+                return imagePath; // Direct URLs are already usable
+            } else if (imagePath.startsWith("gs://")) {
+                console.log(`Using storage reference: ${imagePath}`);
+                const storageRef = ref(storage, imagePath);
+                const imageUrl = await getDownloadURL(storageRef);
+                console.log(`Fetched URL from Firebase Storage: ${imageUrl}`);
+                return imageUrl;
+            } else {
+                console.log(`Unsupported image path format: ${imagePath}`);
+                return null;
+            }
         } catch (error) {
             console.error("Error fetching image from Firebase Storage: ", error);
             return null;
         }
     };
 
+
     const handleVote = async (categoryId, entryId, newVoteCount) => {
         try {
-            // Ensure user is logged in
             const user = auth.currentUser;
             if (!user) {
                 console.error("User is not logged in");
                 return;
             }
 
-            // Check if user has already voted for this entry
             if (votedEntries.includes(entryId)) {
                 Alert.alert("Already Voted", "You have already voted for this entry.");
                 return;
             }
 
-            // Update vote count in the database
             await updateEntryVote(categoryId, entryId, newVoteCount);
-
-            // Update voter details in 'users' collection
             await updateEntryVoter(categoryId, entryId, user.uid);
-
-            // Update voted entries state
             setVotedEntries([...votedEntries, entryId]);
 
-            // Retrieve updated entries data after the vote
             const updatedEntriesData = await getEntries(categoryId);
 
-            // Update the entries array with the new vote counts
             const updatedEntries = updatedEntriesData.map(updatedEntry => {
                 const existingEntry = entries.find(entry => entry.id === updatedEntry.id);
                 return existingEntry ? { ...existingEntry, votes: updatedEntry.votes } : updatedEntry;
             });
 
-            // Sort the updated entries array based on votes in descending order
             updatedEntries.sort((a, b) => b.votes - a.votes);
-
-            // Update state with the sorted entries
             setEntries(updatedEntries);
         } catch (error) {
             console.error("Error updating vote count or voter information in the database: ", error);
@@ -102,10 +109,10 @@ const DetailsScreen = ({ route, navigation }) => {
     const handleScroll = (event) => {
         const { y } = event.nativeEvent.contentOffset;
         if (y <= 0) {
-            // If user scrolls up (or reaches the top), refresh the page
             handleGettingEntriesWithImages(item.id);
         }
     };
+
     return (
         <View style={styles.container}>
             <ImageBackground style={styles.image} source={{ uri: item.imageUrl }} />
@@ -142,19 +149,25 @@ const DetailsScreen = ({ route, navigation }) => {
                                     <View style={styles.right_votes}>
                                         <Text style={styles.entryVotes}>{entry.votes} Votes</Text>
                                     </View>
-
-                                    <Image
-                                        source={{ uri: entry.imageUrl }}
-                                        style={styles.entryImage}
-                                    />
+                                    {entry.imageUrl ? (
+                                        <Image
+                                            source={{ uri: entry.imageUrl }}
+                                            style={styles.entryImage}
+                                        />
+                                    ) : (
+                                        <Text>No Image</Text>
+                                    )}
                                     <TouchableOpacity style={styles.vote_button} onPress={() => handleVote(item.id, entry.id, (+entry.votes) + 1)}>
                                         <Text style={styles.votesText}>Vote</Text>
                                     </TouchableOpacity>
+                                    {/* Add a console log here to check imageUrl */}
+                                    {console.log("Image URL:", entry.imageUrl)}
                                 </View>
                             ))
                         ) : (
                             <Text>No Entries Yet</Text>
                         )}
+                        
                     </View>
                 </View>
             </ScrollView>

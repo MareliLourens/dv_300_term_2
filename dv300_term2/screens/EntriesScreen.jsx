@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, TextInput, TouchableOpacity, ScrollView, Image, Platform } from 'react-native';
 import { createNewEntry, getCategories } from '../services/DbService';
 import { Button } from 'react-native';
-import { saveImageUrlToFirestore } from '../services/BucketService'; // Import saveImageUrlToFirestore function from BucketService.js
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { db } from '../firebase'; // Import db from firebase.js
+import { db, storage } from '../firebase'; // Import storage from firebase.js
+import { saveImageUrlToFirestore } from '../services/BucketService'; // Import saveImageUrlToFirestore function
 
 const EntriesScreen = ({ navigation }) => {
     const [name, setName] = useState('');
@@ -39,22 +39,23 @@ const EntriesScreen = ({ navigation }) => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
-            aspect: [4, 3],
+            aspect: [1, 1],
             quality: 1,
         });
 
-        if (!result.cancelled) {
-            setImage(result.uri);
+        if (!result.canceled) {
+            setImage(result.assets[0].uri);
         }
     };
 
     const handleCreation = async () => {
         try {
+            // Upload image and get URL
             let imageUrl = null;
             if (image) {
-                imageUrl = await uploadImage(image); // Upload image and get URL
+                imageUrl = await uploadImage(image);
             }
-
+    
             // Create entry data object
             const entryData = {
                 name,
@@ -64,9 +65,10 @@ const EntriesScreen = ({ navigation }) => {
                 password,
                 category: selectedCategory,
                 isEntered: false,
-                imageUrl: imageUrl || null,
+                imagePath: imageUrl || null,
+                votes: 0,
             };
-
+    
             // Save entry data including imageUrl to Firestore
             const success = await createNewEntry(selectedCategory, entryData);
             if (success) {
@@ -76,16 +78,19 @@ const EntriesScreen = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error creating entry:', error);
-            // Handle error here (e.g., show error message to user)
         }
     };
+    
 
     const uploadImage = async (imageUri) => {
         const filename = imageUri.substring(imageUri.lastIndexOf('/') + 1);
         const uploadUri = Platform.OS === 'ios' ? imageUri.replace('file://', '') : imageUri;
 
-        const storageRef = ref(storage, 'images/' + filename);
-        const uploadTask = uploadBytesResumable(storageRef, uploadUri, { contentType: 'image/jpeg' });
+        const response = await fetch(uploadUri);
+        const blob = await response.blob();
+
+        const storageRef = ref(storage, filename); // Save directly in the root of storage
+        const uploadTask = uploadBytesResumable(storageRef, blob);
 
         try {
             const snapshot = await uploadTask;
@@ -126,10 +131,9 @@ const EntriesScreen = ({ navigation }) => {
             </View>
         );
     }
-
     return (
-        <SafeAreaView>
-            <ScrollView style={styles.container}>
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
                 <Text style={styles.text}>Enter the competition</Text>
                 <Text style={styles.input_caption}>Name:</Text>
                 <TextInput
@@ -185,24 +189,29 @@ const EntriesScreen = ({ navigation }) => {
                     ))}
                 </View>
 
-                <Button title="Pick an image from camera roll" onPress={pickImage} />
+                <TouchableOpacity style={styles.imgbutton} onPress={pickImage}>
+                    <Text style={styles.imgText}>Pick an image from camera roll</Text>
+                </TouchableOpacity>
+                <View style={styles.entryBubble}>
                 {image && <Image source={{ uri: image }} style={styles.image} />}
-
+                </View>
                 <TouchableOpacity style={styles.button} onPress={handleCreation}>
                     <Text style={styles.buttonText}>Enter Competition</Text>
                 </TouchableOpacity>
 
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
-
 export default EntriesScreen;
 
 const styles = StyleSheet.create({
     container: {
         padding: 20,
         backgroundColor: 'white',
+    },
+    scrollContent: {
+        zIndex: 1,
     },
     inputField: {
         width: '100%',
@@ -220,7 +229,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 25,
-        marginTop: 20,
+        marginTop: 5,
     },
     buttonText: {
         color: '#fff',
@@ -256,9 +265,39 @@ const styles = StyleSheet.create({
     radioButtonSelected: {
         backgroundColor: '#FFBF5E',
     },
+    imgbutton: {
+        width: '100%',
+        height: 50,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 25,
+        borderWidth: 3,
+        borderColor: '#FFBF5E',
+        marginTop: 15,
+        marginBottom: 5,
+    },
+    imgText: {
+        color: '#000000',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    entryBubble: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 10,
+        paddingVertical: 20,
+        marginVertical: 5,
+        borderRadius: 35,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        display: 'flex',
+        alignItems: 'center',
+    },
     image: {
-        width: 200,
-        height: 200,
-        marginTop: 20,
+        width: 250,
+        height: 250,
     },
 });

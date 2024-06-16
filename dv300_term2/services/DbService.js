@@ -64,7 +64,7 @@ export const getCategories = async () => {
 // Function to get all entries in a category sorted by votes in descending order
 export const getEntries = async (categoryId) => {
     try {
-        const collectionRef = collection(db, "Categories", categoryId, "entries");
+        const collectionRef = collection(firestore, "Categories", categoryId, "entries");
         const q = query(collectionRef, orderBy("votes", "desc"));
         const querySnapshot = await getDocs(q);
         const entriesData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
