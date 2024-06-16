@@ -7,7 +7,6 @@ import { auth } from './firebase';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import RegisterScreen from './screens/RegisterScreen';
-import CompetitionsScreen from './screens/CompetitionsScreen';
 import EntriesScreen from './screens/EntriesScreen';
 import DetailsScreen from './screens/DetailsScreen';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -35,7 +34,6 @@ function MyTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Competitions" component={CompetitionsScreen} options={{ headerShown: false }} />
       <Tab.Screen name="Entries" component={EntriesScreen} options={{ headerShown: false }} />
     </Tab.Navigator>
   );
@@ -66,12 +64,17 @@ export default function App() {
         />
         <Stack.Screen
           name="HomeTabs"
-          component={MyTabs}
+          component={HomeScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
           name="Details"
           component={DetailsScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Entries"
+          component={EntriesScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

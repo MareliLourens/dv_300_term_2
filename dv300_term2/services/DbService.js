@@ -1,17 +1,20 @@
 import { db, firestore } from "../firebase";
-import { getDocs, collection, doc, addDoc, query, orderBy, updateDoc, setDoc } from "firebase/firestore";
+import { getDocs, collection, doc, addDoc, query, orderBy, updateDoc, setDoc, increment } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // Function to create a new entry in the specified category
 export const createNewEntry = async (categoryId, entryData) => {
     try {
-        const categoryRef = doc(db, "Categories", categoryId); // Reference to the category document
-        const entriesRef = collection(categoryRef, "entries"); // Reference to the entries collection inside the category
+        const entriesRef = collection(db, 'Categories', categoryId, 'entries');
         const docRef = await addDoc(entriesRef, entryData);
-        console.log("Document written with ID: ", docRef.id);
+        console.log('Document written with ID: ', docRef.id);
+
+        // Update the entries count in the category document
+        await updateCategoryEntriesCount(categoryId); // Increment entries count
+
         return true;
     } catch (error) {
-        console.error("Error adding document: ", error);
+        console.error('Error adding document: ', error);
         return false;
     }
 };
@@ -73,5 +76,20 @@ export const getEntries = async (categoryId) => {
     } catch (error) {
         console.error("Error fetching entries:", error);
         return [];
+    }
+};
+
+const updateCategoryEntriesCount = async (categoryId) => {
+    const categoryRef = doc(db, 'Categories', categoryId);
+
+    try {
+        await updateDoc(categoryRef, {
+            entries: increment(1) // Increment entries count by 1
+        });
+
+        console.log('Entries count updated successfully for category:', categoryId);
+    } catch (error) {
+        console.error('Error updating entries count:', error);
+        throw error;
     }
 };

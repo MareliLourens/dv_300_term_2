@@ -49,38 +49,38 @@ const EntriesScreen = ({ navigation }) => {
     };
 
     const handleCreation = async () => {
-        try {
-            // Upload image and get URL
-            let imageUrl = null;
-            if (image) {
-                imageUrl = await uploadImage(image);
-            }
-    
-            // Create entry data object
-            const entryData = {
-                name,
-                surname,
-                email,
-                age,
-                password,
-                category: selectedCategory,
-                isEntered: false,
-                imagePath: imageUrl || null,
-                votes: 0,
-            };
-    
-            // Save entry data including imageUrl to Firestore
-            const success = await createNewEntry(selectedCategory, entryData);
-            if (success) {
-                navigation.goBack();
-            } else {
-                console.error('Failed to create entry');
-            }
-        } catch (error) {
-            console.error('Error creating entry:', error);
+    try {
+        // Upload image and get URL
+        let imageUrl = null;
+        if (image) {
+            imageUrl = await uploadImage(image);
         }
-    };
-    
+
+        // Create entry data object
+        const entryData = {
+            name,
+            surname,
+            email,
+            age,
+            password,
+            category: selectedCategory,
+            isEntered: false,
+            imagePath: imageUrl || null,
+            votes: 0,
+        };
+
+        // Save entry data including imageUrl to Firestore
+        const success = await createNewEntry(selectedCategory, entryData);
+        if (success) {
+            navigation.goBack();
+        } else {
+            console.error('Failed to create entry');
+        }
+    } catch (error) {
+        console.error('Error creating entry:', error);
+    }
+};
+
 
     const uploadImage = async (imageUri) => {
         const filename = imageUri.substring(imageUri.lastIndexOf('/') + 1);

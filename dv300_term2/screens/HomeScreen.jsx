@@ -4,26 +4,28 @@ import { auth } from '../firebase';
 import { getCategories } from '../services/DbService';
 import { getDownloadURL, ref } from 'firebase/storage';
 import { storage } from '../firebase';
+import moment from 'moment';
 
 const HomeScreen = ({ navigation }) => {
-
-  const handleLogout = () => {
-    auth.signOut().then(() => {
-      navigation.replace('Login');
-    }).catch((error) => {
-      console.error("Sign out error:", error);
-    });
-  };
-
   const [CategoryItems, setCategoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [remainingTimes, setRemainingTimes] = useState({});
 
   useEffect(() => {
     handleGettingOfData();
   }, []);
 
+  useEffect(() => {
+    // Start countdown timers for each competition
+    const interval = setInterval(updateRemainingTimes, 1000);
+
+    return () => clearInterval(interval);
+  }, [CategoryItems]);
+
   const handleGettingOfData = async () => {
     try {
+      setLoading(true); // Start loading
       var allData = await getCategories();
       console.log("All data: ", allData);
 
@@ -35,9 +37,11 @@ const HomeScreen = ({ navigation }) => {
 
       setCategoryItems(allDataWithImages);
       setLoading(false);
+      setIsRefreshing(false); // Finish refreshing
     } catch (error) {
       console.error("Error fetching categories or images: ", error);
       setLoading(false);
+      setIsRefreshing(false); // Finish refreshing
     }
   };
 
@@ -51,13 +55,52 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    if (offsetY === 0 && !isRefreshing) {
+      setIsRefreshing(true);
+      handleGettingOfData();
+    }
+  };
+
+  const updateRemainingTimes = () => {
+    const updatedRemainingTimes = {};
+
+    CategoryItems.forEach(item => {
+      try {
+
+        // Convert Firestore Timestamp to JavaScript Date object
+        const timestamp = item.time_remaining;
+        const endTime = new Date(timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000);
+
+        // Adjust endTime for UTC+2 timezone
+        endTime.setHours(endTime.getHours() + 2); // Adjust for UTC+2
+
+        // Calculate current time in UTC
+        const now = moment();
+
+        // Calculate time difference in milliseconds
+        const timeDiff = endTime.getTime() - now.valueOf();
+
+        if (timeDiff > 0) {
+          // Convert time difference to days, hours, minutes, seconds
+          const duration = moment.duration(timeDiff);
+          const days = duration.days();
+          const hours = duration.hours();
+          const minutes = duration.minutes();
+          const seconds = duration.seconds();
+
+          updatedRemainingTimes[item.name] = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        } else {
+          updatedRemainingTimes[item.name] = "Expired";
+        }
+      } catch (error) {
+        updatedRemainingTimes[item.name] = "Error"; // Handle error state gracefully
+      }
+    });
+
+    setRemainingTimes(updatedRemainingTimes);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
@@ -65,55 +108,52 @@ const HomeScreen = ({ navigation }) => {
         <Text style={styles.welcome}>Welcome back</Text>
         <Image style={styles.image} source={require('../assets/menu_button.png')} />
       </View>
-      <ScrollView>
-        <View style={{ padding: 20, paddingTop: 80 }}>
-          <Text style={styles.top}>Top Competitions</Text>
-          <ScrollView horizontal={true} style={styles.scrollView}>
+      <ScrollView
+        onScroll={handleScroll}
+        scrollEventThrottle={16} // Adjust as needed
+        contentContainerStyle={{ padding: 20, paddingTop: 80 }}
+      >
+        {loading ? (
+          <ActivityIndicator size="large" color="#0000ff" />
+        ) : (
+          <>
+            <Text style={styles.top}>Top Competitions</Text>
+            <ScrollView horizontal={true} style={styles.scrollView}>
+              {CategoryItems.map((item, index) => (
+                <TouchableOpacity key={index} style={styles.box} onPress={() => navigation.navigate("Details", { item })}>
+                  {item.imageUrl && (
+                    <Image
+                      source={{ uri: item.imageUrl }}
+                      style={styles.location_image}
+                    />
+                  )}
+                  <Text style={styles.text}>{item.name}</Text>
+                  <Image style={styles.location_icon} source={require('../assets/location.png')} />
+                  <Text style={styles.subtitle}>{item.location}</Text>
+                  <Image style={styles.location_icon} source={require('../assets/entries.png')} />
+                  <Text style={styles.subtitle}>{item.entries}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.cta} onPress={() => navigation.navigate('Entries')}>
+              <Image style={styles.cta_image} source={require('../assets/cta.png')} />
+              <Text style={styles.cta_top}>Enter now!</Text>
+              <Text style={styles.cta_subtitle}>Join to win a trip to your dream destination!</Text>
+            </TouchableOpacity>
+            <Text style={styles.top}>Time Remaining</Text>
             {CategoryItems.map((item, index) => (
-              <TouchableOpacity key={index} style={styles.box} onPress={() => navigation.navigate("Details", { item })}>
-                {item.imageUrl && (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.location_image}
-                  />
-                )}
-                <Text style={styles.text}>{item.name}</Text>
-                <Image style={styles.location_icon} source={require('../assets/location.png')} />
-                <Text style={styles.subtitle}>{item.location}</Text>
-                <Image style={styles.location_icon} source={require('../assets/entries.png')} />
-                <Text style={styles.subtitle}>{item.entries}</Text>
-              </TouchableOpacity>
+              <View style={styles.countdown} onPress={() => navigation.navigate('Entries')}>
+                <Text style={styles.countdownname}>{item.name}</Text>
+                <Text style={styles.countdowntext}>{remainingTimes[item.name]}</Text>
+              </View>
+
             ))}
-          </ScrollView>
-          <TouchableOpacity style={styles.cta} onPress={() => navigation.navigate('Entries')}>
-            <Image style={styles.cta_image} source={require('../assets/cta.png')} />
-            <Text style={styles.cta_top}>Enter now!</Text>
-            <Text style={styles.cta_subtitle}>Join to win a trip to your dream destination!</Text>
-          </TouchableOpacity>
-          <Text style={styles.top}>Top Entries</Text>
-          <ScrollView horizontal={true} style={styles.scrollView}>
-            {CategoryItems.map((item, index) => (
-              <TouchableOpacity key={index} style={styles.box} onPress={() => navigation.navigate("Details", { item })}>
-                {item.imageUrl && (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={styles.location_image}
-                  />
-                )}
-                <Text style={styles.text}>{item.name}</Text>
-                <Image style={styles.location_icon} source={require('../assets/location.png')} />
-                <Text style={styles.subtitle}>{item.location}</Text>
-                <Image style={styles.location_icon} source={require('../assets/entries.png')} />
-                <Text style={styles.subtitle}>{item.entries}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   stickyHeader: {
     position: 'absolute',
@@ -220,6 +260,35 @@ const styles = StyleSheet.create({
     color: 'white',
     marginTop: -5,
     marginLeft: 15,
+  },
+  remainingTime: {
+    fontSize: 14,
+    color: 'white',
+    marginTop: 5,
+    marginLeft: 10,
+  },
+  countdown: {
+    width: "100%",
+    height: 85,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: '#FFBF5E',
+    marginTop: 15,
+    marginBottom: 5,
+  },
+  countdownname:{
+    color: 'black',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 10,
+  },
+  countdowntext: {
+    color: 'black',
+    fontSize: 20,
+    marginLeft: 10,
   },
 });
 
