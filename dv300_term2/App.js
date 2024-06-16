@@ -40,6 +40,7 @@ function MyTabs() {
 }
 
 export default function App() {
+  console.disableYellowBox = true;
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -81,3 +82,4 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
